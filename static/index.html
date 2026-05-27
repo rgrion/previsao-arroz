@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Previsão da Produção de Arroz</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f5;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2f5d3a;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 25px;
+      padding: 12px;
+      background: #2f7d46;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #256638;
+    }
+
+    .resultado {
+      margin-top: 25px;
+      padding: 20px;
+      background: #eef8f0;
+      border-left: 5px solid #2f7d46;
+      border-radius: 8px;
+      font-size: 18px;
+      display: none;
+    }
+
+    .erro {
+      margin-top: 25px;
+      padding: 20px;
+      background: #ffecec;
+      border-left: 5px solid #cc0000;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Previsão da Produção de Arroz</h1>
+
+    <label for="pais">País</label>
+    <select id="pais">
+      <option value="Argentina">Argentina</option>
+      <option value="Bolivia (Plurinational State of)">Bolívia</option>
+      <option value="Brazil" selected>Brasil</option>
+      <option value="Chile">Chile</option>
+      <option value="Colombia">Colômbia</option>
+      <option value="Ecuador">Equador</option>
+      <option value="Guyana">Guiana</option>
+      <option value="Paraguay">Paraguai</option>
+      <option value="Peru">Peru</option>
+      <option value="Suriname">Suriname</option>
+      <option value="Uruguay">Uruguai</option>
+      <option value="Venezuela (Bolivarian Republic of)">Venezuela</option>
+    </select>
+
+    <label for="ano">Ano da previsão</label>
+    <input type="number" id="ano" value="2024">
+
+    <label for="area">Área colhida (ha)</label>
+    <input type="number" id="area" value="2300000">
+
+    <label for="rendimento">Rendimento (kg/ha)</label>
+    <input type="number" id="rendimento" value="5200">
+
+    <label for="temperatura">Temperatura média (°C)</label>
+    <input type="number" step="0.01" id="temperatura" value="24.8">
+
+    <label for="precipitacao">Precipitação (mm)</label>
+    <input type="number" step="0.01" id="precipitacao" value="1400">
+
+    <button onclick="prever()">Gerar previsão</button>
+
+    <div id="resultado" class="resultado"></div>
+    <div id="erro" class="erro"></div>
+  </div>
+
+  <script>
+    async function prever() {
+      const resultadoDiv = document.getElementById("resultado");
+      const erroDiv = document.getElementById("erro");
+
+      resultadoDiv.style.display = "none";
+      erroDiv.style.display = "none";
+
+      const dados = {
+        Pais: document.getElementById("pais").value,
+        Year: parseInt(document.getElementById("ano").value),
+        area_harvested: parseFloat(document.getElementById("area").value),
+        yield_kg_ha: parseFloat(document.getElementById("rendimento").value),
+        temp_media_c: parseFloat(document.getElementById("temperatura").value),
+        precipitacao_mm: parseFloat(document.getElementById("precipitacao").value)
+      };
+
+      try {
+        const resposta = await fetch("/prever", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(dados)
+        });
+
+        if (!resposta.ok) {
+          throw new Error("Erro ao gerar previsão.");
+        }
+
+        const retorno = await resposta.json();
+
+        const valorFormatado = retorno.producao_prevista_t.toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+        resultadoDiv.innerHTML = `
+          <strong>País:</strong> ${retorno.pais}<br>
+          <strong>Ano:</strong> ${retorno.ano}<br>
+          <strong>Produção prevista:</strong> ${valorFormatado} toneladas
+        `;
+
+        resultadoDiv.style.display = "block";
+
+      } catch (erro) {
+        erroDiv.innerText = "Não foi possível gerar a previsão. Verifique se a API está rodando.";
+        erroDiv.style.display = "block";
+      }
+    }
+  </script>
+
+</body>
+</html>
